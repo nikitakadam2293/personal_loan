@@ -1,0 +1,158 @@
+
+
+
+<!DOCTYPE html>
+<html id="htmlId">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
+  <title>Coverage Report > RateController</title>
+  <style type="text/css">
+    @import "../../css/coverage.css";
+    @import "../../css/idea.min.css";
+  </style>
+  <script type="text/javascript" src="../../js/highlight.min.js"></script>
+  <script type="text/javascript" src="../../js/highlightjs-line-numbers.min.js"></script>
+</head>
+
+<body>
+<div class="content">
+<div class="breadCrumbs">
+Current scope:     <a href="../../index.html">all classes</a>
+    <span class="separator">|</span>
+    <a href="../index.html">com.personal_loan.personal_loan.controller</a>
+</div>
+
+<h1>Coverage Summary for Class: RateController (com.personal_loan.personal_loan.controller)</h1>
+
+<table class="coverageStats">
+<tr>
+  <th class="name">Class</th>
+<th class="coverageStat 
+">
+  Class, %
+</th>
+<th class="coverageStat 
+">
+  Method, %
+</th>
+<th class="coverageStat 
+">
+  Line, %
+</th>
+</tr>
+<tr>
+  <td class="name">RateController</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (1/1)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    25%
+  </span>
+  <span class="absValue">
+    (1/4)
+  </span>
+</td>
+</tr>
+
+</table>
+
+<br/>
+<br/>
+
+
+<pre>
+<code class="sourceCode" id="sourceCode">&nbsp;package com.personal_loan.personal_loan.controller;
+&nbsp;
+&nbsp;import com.personal_loan.personal_loan.dto.EMIRequest;
+&nbsp;import com.personal_loan.personal_loan.dto.EMIResponse;
+&nbsp;import com.personal_loan.personal_loan.dto.RateRequest;
+&nbsp;import com.personal_loan.personal_loan.dto.RateResponse;
+&nbsp;import com.personal_loan.personal_loan.service.RateService;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
+&nbsp;import com.personal_loan.personal_loan.dto.ScenarioRequest;
+&nbsp;import org.springframework.web.bind.annotation.CrossOrigin;
+&nbsp;import org.springframework.web.bind.annotation.PostMapping;
+&nbsp;import org.springframework.web.bind.annotation.RequestMapping;
+&nbsp;import org.springframework.web.bind.annotation.RestController;
+&nbsp;import org.springframework.web.bind.annotation.RequestBody;
+&nbsp;
+&nbsp;@CrossOrigin(origins = &quot;http://localhost:3000&quot;)
+&nbsp;@RestController
+&nbsp;@RequestMapping(&quot;/api/rate&quot;)
+<b class="fc">&nbsp;public class RateController {</b>
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    private RateService  rateService;
+&nbsp;
+&nbsp;    @PostMapping(&quot;/calculate_rate&quot;)
+&nbsp;    public RateResponse calculateRate(@RequestBody RateRequest request)
+&nbsp;    {
+<b class="nc">&nbsp;        return  rateService.calculateAndSaveRate(request);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @PostMapping(&quot;/calculate_emi&quot;)
+&nbsp;    public EMIResponse calculateEmi(@RequestBody EMIRequest request)
+&nbsp;    {
+<b class="nc">&nbsp;        return  rateService.calculateAndSaveEMI(request);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    @PostMapping(&quot;/compare&quot;)
+&nbsp;    public ScenarioComparisonResponse compareScenario(@RequestBody ScenarioRequest request)
+&nbsp;    {
+<b class="nc">&nbsp;        return  rateService.compareScenarios(request);</b>
+&nbsp;    }
+&nbsp;
+&nbsp;}
+&nbsp;
+&nbsp;
+&nbsp;/*
+&nbsp;
+&nbsp;Later, replace this:
+&nbsp;req.getCreditScore()
+&nbsp;
+&nbsp;with:
+&nbsp;creditScoreService.getCreditScore(applicantId)
+&nbsp;* */
+</code>
+</pre>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var msie = false, msie9 = false;
+    /*@cc_on
+      msie = true;
+      @if (@_jscript_version >= 9)
+        msie9 = true;
+      @end
+    @*/
+
+    if (!msie || msie && msie9) {
+      hljs.highlightAll()
+      hljs.initLineNumbersOnLoad();
+    }
+})();
+</script>
+
+<div class="footer">
+    
+    <div style="float:right;">generated on 2025-07-03 18:21</div>
+</div>
+</body>
+</html>
