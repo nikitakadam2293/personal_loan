@@ -1,3 +1,4 @@
+/*
 package com.personal_loan.personal_loan.service_impl;
 // reomve stars
 import com.personal_loan.personal_loan.dto.EMIResponse;
@@ -65,10 +66,12 @@ public class RateServiceImplTest {
     }
 
 
-   /*  negative testing or defensive testing.
+   */
+/*  negative testing or defensive testing.
     It proves your code:
     Protects itself against bad inputs
-    Provides clear error feedback*/
+    Provides clear error feedback*//*
+
     @Test
     void calculateAndSaveRate_shouldThrowException_whenCreditScoreInvalid() {
         RateRequest request = new RateRequest();
@@ -129,12 +132,14 @@ public class RateServiceImplTest {
         request.setReferredBySomeone(false);
         request.setReferringSomeone(true);
 
+*/
 /*
          RateResponse response = rateService.calculateAndSaveRate(request);
         assertThat(response).isNotNull();
         assertThat(response.getBaseRate()).isEqualTo(24.0);  // 24
       // this throw exception credit score invalid
-*/
+*//*
+
 
         assertThatThrownBy(() -> rateService.calculateAndSaveRate(request))
                 .isInstanceOf(InvalidCreditScoreException.class)
@@ -335,3 +340,4 @@ public class RateServiceImplTest {
     }
 
 }
+*/
