@@ -2,15 +2,11 @@ package com.personal_loan.personal_loan.util;
 
 import com.personal_loan.personal_loan.dto.EMIRequest;
 import com.personal_loan.personal_loan.dto.ScenarioResult;
-
 import java.util.ArrayList;
 import java.util.List;
-
 import static java.lang.Math.pow;
 
 public class RateCalculatorUtil {
-
-
     public static double calculateBaseRate(int score) {
 
         // Linear Interpolation Formula
@@ -46,14 +42,12 @@ public class RateCalculatorUtil {
         } else {
             return 0.0;
         }
-
     }
 
     public static double getIncomeAdjustment(double income) {
         if (income > 100000) {
             return -0.5;
         } else if (income >= 50000) {
-
             return -0.25;
         } else {
             return 0.0;
@@ -83,25 +77,11 @@ public class RateCalculatorUtil {
         List<ScenarioResult> results = new ArrayList<>();
 
         for (EMIRequest scenario : scenarios) {
-            double P = scenario.getLoanAmount();
-           // double R = scenario.getAnnualRate() / 12 / 100;
-          //  int N = scenario.getTenureAmount();
 
+            double P = scenario.getLoanAmount();
             double emi = calculateEMI(P,scenario.getAnnualRate(), scenario.getTenureAmount());
             double totalRepayment = emi * scenario.getTenureAmount();
             double totalInterest = totalRepayment - P;
-
-
-
-
-
-
-
-
-
-
-
-
 
             ScenarioResult result = new ScenarioResult();
             result.setEmi(emi);
@@ -116,9 +96,5 @@ public class RateCalculatorUtil {
         }
         return results;
     }
-
-
-
-
 
 }

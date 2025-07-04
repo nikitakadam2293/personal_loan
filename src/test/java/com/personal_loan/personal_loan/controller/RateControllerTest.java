@@ -18,9 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.List;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -158,7 +156,6 @@ public class RateControllerTest {
         applicant.setCreditScore(800);
         applicant.setEmployerType("private");
         applicant.setMonthlyIncome(50000);
-
 
        Mockito.when(rateService.getApplicantById(1L)).thenReturn(applicant);
 

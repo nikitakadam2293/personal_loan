@@ -17,18 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
-
 
 public class RateServiceImplTest {
 
@@ -146,7 +143,6 @@ public class RateServiceImplTest {
                 .hasMessageContaining("Credit score is not valid");    // this pass test case if credit score greater than 950
     }
 
-
 //  REFERRAL ONLY REFERRED
     @Test
     void calculateAndSaveRate_shouldCalculate_whenOnlyReferred() {
@@ -242,7 +238,6 @@ public class RateServiceImplTest {
 
         verify(repository, times(1)).save(any(Applicant.class));
     }
-
 
     @Test
     void calculateAndSaveEMI_shouldCalculate_andSaveApplicant() {

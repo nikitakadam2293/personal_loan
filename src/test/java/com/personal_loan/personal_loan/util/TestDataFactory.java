@@ -1,8 +1,13 @@
 package com.personal_loan.personal_loan.util;
 
-import com.personal_loan.personal_loan.dto.*;
+import com.personal_loan.personal_loan.dto.RateRequest;
+import com.personal_loan.personal_loan.dto.ScenarioRequest;
+import com.personal_loan.personal_loan.dto.RateResponse;
+import com.personal_loan.personal_loan.dto.EMIRequest;
+import com.personal_loan.personal_loan.dto.EMIResponse;
+import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
+import com.personal_loan.personal_loan.dto.ScenarioResult;
 import com.personal_loan.personal_loan.entity.Applicant;
-
 import java.util.List;
 
 public class TestDataFactory {
@@ -24,7 +29,6 @@ public class TestDataFactory {
         request.setCreditScore(100);  // Invalid
         return request;
     }
-
 
     public static RateResponse validRateResponse() {
 
