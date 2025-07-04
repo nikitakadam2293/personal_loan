@@ -9,36 +9,35 @@ import com.personal_loan.personal_loan.service.RateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
 import com.personal_loan.personal_loan.dto.ScenarioRequest;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:3000")
-//@CrossOrigin(origins = "http://localhost:*")
 @RestController
 @RequestMapping("/api/rate")
 public class RateController {
-
     @Autowired
-    private RateService  rateService;
+    private RateService rateService;
 
     @PostMapping("/calculate_rate")
-    public RateResponse calculateRate(@RequestBody RateRequest request)
-    {
-        return  rateService.calculateAndSaveRate(request);
+    public RateResponse calculateRate(@RequestBody RateRequest request) {
+        return rateService.calculateAndSaveRate(request);
     }
 
     @PostMapping("/calculate_emi")
-    public EMIResponse calculateEmi(@RequestBody EMIRequest request)
-    {
-        return  rateService.calculateAndSaveEMI(request);
+    public EMIResponse calculateEmi(@RequestBody EMIRequest request) {
+        return rateService.calculateAndSaveEMI(request);
     }
 
-
     @PostMapping("/compare")
-    public ScenarioComparisonResponse compareScenario(@RequestBody ScenarioRequest request)
-    {
-        return  rateService.compareScenarios(request);
+    public ScenarioComparisonResponse compareScenario(@RequestBody ScenarioRequest request) {
+        return rateService.compareScenarios(request);
     }
 
     // get all
@@ -53,15 +52,12 @@ public class RateController {
         return rateService.getApplicantById(id);
     }
 
-
-
-
 }
 
 
 /*
 
-Later, replace this:
+after replace this:
 req.getCreditScore()
 
 with:

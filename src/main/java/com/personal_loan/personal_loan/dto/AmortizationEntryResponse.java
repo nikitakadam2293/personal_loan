@@ -7,9 +7,9 @@ import lombok.Data;
 public class AmortizationEntryResponse {
 
     private int month;
-    private  double principalPaid;
-    private  double interestPaid;
-    private  double remainingBalance;
+    private double principalPaid;
+    private double interestPaid;
+    private double remainingBalance;
 
 
 }

@@ -10,6 +10,6 @@ public class ScenarioResult {
     private double totalRepayment;
     private double principal;
     private double annualRate;
-    private  int tenureMonth;
+    private int tenureMonth;
 
 }

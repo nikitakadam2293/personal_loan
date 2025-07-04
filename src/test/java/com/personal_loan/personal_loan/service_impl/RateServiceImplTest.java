@@ -1,6 +1,12 @@
 package com.personal_loan.personal_loan.service_impl;
-
-import com.personal_loan.personal_loan.dto.*;
+// reomve stars
+import com.personal_loan.personal_loan.dto.EMIResponse;
+import com.personal_loan.personal_loan.dto.EMIRequest;
+import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
+import com.personal_loan.personal_loan.dto.ScenarioResult;
+import com.personal_loan.personal_loan.dto.RateRequest;
+import com.personal_loan.personal_loan.dto.RateResponse;
+import com.personal_loan.personal_loan.dto.ScenarioRequest;
 import com.personal_loan.personal_loan.entity.Applicant;
 import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
 import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
@@ -17,7 +23,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.times;
 
 
 public class RateServiceImplTest {
@@ -52,9 +61,7 @@ public class RateServiceImplTest {
         assertThat(response.getIncomeAdjustment()).isEqualTo(-0.25);
         assertThat(response.getFinalRate()).isGreaterThanOrEqualTo(10.0);
         assertThat(response.getProcessingFee()).isBetween(1250.0,5000.0);
-
         verify(repository, times(1)).save(any(Applicant.class));
-
     }
 
 
@@ -71,14 +78,12 @@ public class RateServiceImplTest {
         request.setLoanAmount(100000);
         request.setReferredBySomeone(false);
         request.setReferringSomeone(false);
-
         assertThatThrownBy(() -> rateService.calculateAndSaveRate(request))
                 .isInstanceOf(InvalidCreditScoreException.class)
                 .hasMessageContaining("Credit score is not valid");
     }
 
     //  writing additional test cases
-
     // Credit score is low
     @Test
     void calculateAndSaveRate_shouldCalculate_whenCreditScoreLowRange() {
@@ -89,22 +94,17 @@ public class RateServiceImplTest {
         request.setLoanAmount(50000);   // process fee <1250
         request.setReferredBySomeone(false);
         request.setReferringSomeone(false);
-
         RateResponse response = rateService.calculateAndSaveRate(request);
-
         assertThat(response).isNotNull();
         assertThat(response.getBaseRate()).isBetween(17.0,24.0);
         assertThat(response.getEmployerAdjustment()).isEqualTo(-0.5);
         assertThat(response.getIncomeAdjustment()).isEqualTo(0.0);
         assertThat(response.getReferralAdjustment()).isEqualTo(0.0);
         assertThat(response.getProcessingFee()).isEqualTo(1250.0);
-
         verify(repository, times(1)).save(any(Applicant.class));
-
     }
 
     //  CREADIT SCORE  650-749 range
-
     @Test
     void calculateAndSaveRate_shouldCalculate_whenCreditScoreMiddleRange() {
         RateRequest request = new RateRequest();
@@ -114,13 +114,9 @@ public class RateServiceImplTest {
         request.setLoanAmount(200000);
         request.setReferredBySomeone(false);
         request.setReferringSomeone(true);     // false NEW
-
         RateResponse response = rateService.calculateAndSaveRate(request);
         assertThat(response.getBaseRate()).isBetween(13.0,16.0);
-
     }
-
-
 
     // high credit score (>950)
     @Test
@@ -241,9 +237,6 @@ public class RateServiceImplTest {
 
         verify(repository, times(1)).save(any(Applicant.class));
     }
-
-
-
 
 
     @Test

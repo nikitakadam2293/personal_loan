@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 public class EMIRequest {
 
     @NotNull(message = "Loan amount is required")
-    @Min(value = 50000, message ="Loan amount must be at least 50000")
+    @Min(value = 50000, message = "Loan amount must be at least 50000")
     private double loanAmount;
 
     @NotNull(message = "Tenure is required")
@@ -20,6 +20,6 @@ public class EMIRequest {
 
     @NotNull(message = "Annual rate is required")
     @Min(value = 10, message = "Annual rate not less than 10")
-    private  double  annualRate;
+    private double annualRate;
 
 }

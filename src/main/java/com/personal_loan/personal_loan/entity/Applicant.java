@@ -16,28 +16,20 @@ public class Applicant {
     private boolean referringSomeone;  //  me
     private boolean referredBySomeone;  // friend
     private double monthlyIncome;
-    private double  loanAmount;
-
+    private double loanAmount;
 
     //  Response
     private double baseRate;
     private double employerAdjustment;
-    private double  referralAdjustment;
-    private double  incomeAdjustment;
-    private double  finalRate;
-    private double  processingFee;
-
+    private double referralAdjustment;
+    private double incomeAdjustment;
+    private double finalRate;
+    private double processingFee;
 
     //  EMI  Detail
-
-    private  int tenureMonths;
-    private  double emi;
+    private int tenureMonths;
+    private double emi;
     private double totalInterest;
     private double totalRepayment;
-
-
-
-
-
 
 }

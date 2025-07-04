@@ -7,7 +7,6 @@ import com.personal_loan.personal_loan.dto.RateResponse;
 import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
 import com.personal_loan.personal_loan.dto.ScenarioRequest;
 import com.personal_loan.personal_loan.entity.Applicant;
-
 import java.util.List;
 
 public interface RateService {
@@ -16,9 +15,7 @@ public interface RateService {
 
     EMIResponse calculateAndSaveEMI(EMIRequest request);
 
-
     ScenarioComparisonResponse compareScenarios(ScenarioRequest request);
-
 
     List<Applicant> getAllApplicants();
 

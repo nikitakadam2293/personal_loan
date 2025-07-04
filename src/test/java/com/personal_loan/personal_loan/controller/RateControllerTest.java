@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(RateController.class)
 public class RateControllerTest {
 
-   @Autowired
+   @Autowired  // inmo
     private MockMvc mockMvc;
 
     @MockBean
@@ -162,7 +162,6 @@ public class RateControllerTest {
 
         mockMvc.perform(get("/api/rate/1"))
                 .andExpect(status().isOk())
-
 
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.creditScore").value(800))

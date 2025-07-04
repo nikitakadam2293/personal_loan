@@ -1,3 +1,4 @@
+
 package com.personal_loan.personal_loan.service_impl;
 
 import com.personal_loan.personal_loan.dto.*;
@@ -6,6 +7,7 @@ import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
 import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
 import com.personal_loan.personal_loan.repository.ApplicantRepository;
 import com.personal_loan.personal_loan.service.RateService;
+import com.personal_loan.personal_loan.util.RateCalculatorUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.personal_loan.personal_loan.util.RateCalculatorUtil.calculatedoubleProcessingFee;
 import static java.lang.Math.round;
 
 @Service
@@ -21,55 +24,38 @@ public class RateServiceImpl implements RateService {
     @Autowired
     private ApplicantRepository repository;
 
-    Applicant  applicant  =  new Applicant();
-
+    Applicant applicant = new Applicant();
 
     @Override
     public RateResponse calculateAndSaveRate(RateRequest request) {
 
-        //   Calculate Base  Rate
-        double baseRate =  calculateBaseRate(request.getCreditScore());
-
-        //  throw exception if credit score is not  valid
-        int score  =  request.getCreditScore();
-        if(score < 300  ||  score>950)
-        {
-            throw  new InvalidCreditScoreException("Credit score is not valid. Must between 300  and 950");
+//  throw exception if credit score is not  valid
+        int score = request.getCreditScore();
+        if (score < 300 || score > 950) {
+            throw new InvalidCreditScoreException("Credit score is not valid. Must between 300  and 950");
         }
 
+        double baseRate = RateCalculatorUtil.calculateBaseRate(score);
+        double employerAdj = RateCalculatorUtil.getEmployerAdjustment(request.getEmployerType());
+        double referralAdj = RateCalculatorUtil.getReferralAdjustment(request.isReferredBySomeone(), request.isReferringSomeone());
+        double incomeAdj = RateCalculatorUtil.getIncomeAdjustment(request.getMonthlyIncome());
 
-        // Adjustment
-        // Employer
-        double  employerAdj = getEmployerAdjustment(request.getEmployerType());
+        double finalRate = baseRate + employerAdj + referralAdj + incomeAdj;
 
-        // Referal
-        double referralAdj  = getReferralAdjustment( request.isReferredBySomeone(),request.isReferringSomeone() );
-
-        // Income
-        double  incomeAdj   = getIncomeAdjustment(request.getMonthlyIncome());
-
-        double  finalRate  =    baseRate +  employerAdj  +  referralAdj  +  incomeAdj;
-
-
-        if(finalRate  <  10.0)
-        {
-            finalRate  =  10.0;
+        if (finalRate < 10.0) {
+            finalRate = 10.0;
         }
 
-        //  Processing  Fee
-        double  processingFee =  calculatedoubleProcessingFee(request.getLoanAmount());
-
+//  Processing  Fee
+        double processingFee = calculatedoubleProcessingFee(request.getLoanAmount());
 
         // save to  db
-//        Applicant  applicant  =  new Applicant();
-
         applicant.setCreditScore(request.getCreditScore());
         applicant.setEmployerType(request.getEmployerType());
         applicant.setReferringSomeone(request.isReferringSomeone());
         applicant.setReferredBySomeone(request.isReferredBySomeone());
         applicant.setMonthlyIncome(request.getMonthlyIncome());
         applicant.setLoanAmount(request.getLoanAmount());
-
 
         applicant.setBaseRate(baseRate);
         applicant.setEmployerAdjustment(employerAdj);
@@ -80,10 +66,8 @@ public class RateServiceImpl implements RateService {
 
         repository.save(applicant);
 
-
-
         //  create response
-        RateResponse  response  =  new RateResponse();
+        RateResponse response = new RateResponse();
         response.setBaseRate(baseRate);
         response.setEmployerAdjustment(employerAdj);
         response.setReferralAdjustment(referralAdj);
@@ -95,116 +79,262 @@ public class RateServiceImpl implements RateService {
     }
 
 
-    public double  calculateBaseRate(int score)
-    {
+    //   CALCULATE   EMI
+    @Override
+    public EMIResponse calculateAndSaveEMI(EMIRequest request) {
+
+        double principal = request.getLoanAmount();
+        double annualRate = request.getAnnualRate();
+        int tenureMonths = request.getTenureAmount();
+
+        double emi = RateCalculatorUtil.calculateEMI(principal, annualRate, tenureMonths);
+        double totalRepayment = emi * tenureMonths;
+        double totalInterest = totalRepayment - principal;
+
+
+        // Save the database
+        applicant.setLoanAmount(principal);
+        applicant.setTenureMonths(tenureMonths);
+        applicant.setFinalRate(annualRate);
+        applicant.setEmi(emi);
+        applicant.setTotalRepayment(totalRepayment);
+        applicant.setTotalInterest(totalInterest);
+
+        repository.save(applicant);
+
+
+        // Preparation amortization scedule
+        List<AmortizationEntryResponse> schedule = new ArrayList<>();
+        double remainingPrincipal = principal;
+        double monthlyRate = annualRate / 12 / 100;
+
+        for (int month = 1; month <= tenureMonths; month++) {
+            double interestForMonth = remainingPrincipal * monthlyRate;
+            double principalForMonth = emi - interestForMonth;
+            remainingPrincipal -= principalForMonth;
+
+            if (month == tenureMonths) {
+                remainingPrincipal = 0;
+            }
+
+            AmortizationEntryResponse entry = new AmortizationEntryResponse();
+            entry.setMonth(month);
+            entry.setPrincipalPaid(round(principalForMonth));
+            entry.setInterestPaid(round(interestForMonth));
+            entry.setRemainingBalance(round(remainingPrincipal));
+
+            schedule.add(entry);
+        }
+
+        //  Prepare Response
+        EMIResponse response = new EMIResponse();
+        response.setEmi(emi);
+        response.setPrincipal(round(principal));
+        response.setTotalInterest(round(totalInterest));
+        response.setTotalRepayment(round(totalRepayment));
+        response.setAmortizationSchedule(schedule);
+        return response;
+
+    }
+
+    @Override
+    public ScenarioComparisonResponse compareScenarios(ScenarioRequest request) {
+
+        List<ScenarioResult> results = RateCalculatorUtil.calculateScenarioResult(request.getScenario());
+
+        ScenarioComparisonResponse response = new ScenarioComparisonResponse();
+        response.setResult(results);
+        return response;
+    }
+
+    @Override
+    public List<Applicant> getAllApplicants() {
+        return repository.findAll();
+    }
+
+    @Override
+    public Applicant getApplicantById(Long id) {
+        Optional<Applicant> optionalApplicant = repository.findById(id);
+        return optionalApplicant.orElseThrow(() -> new ApplicantNotFoundException("Applicant not found with id : " + id));
+
+    }
+}
+/*
+import com.personal_loan.personal_loan.dto.RateResponse;
+import com.personal_loan.personal_loan.dto.RateRequest;
+import com.personal_loan.personal_loan.dto.EMIResponse;
+import com.personal_loan.personal_loan.dto.EMIRequest;
+import com.personal_loan.personal_loan.dto.AmortizationEntryResponse;
+import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
+import com.personal_loan.personal_loan.dto.ScenarioRequest;
+import com.personal_loan.personal_loan.dto.ScenarioResult;
+import com.personal_loan.personal_loan.entity.Applicant;
+import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
+import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
+import com.personal_loan.personal_loan.repository.ApplicantRepository;
+import com.personal_loan.personal_loan.service.RateService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import static java.lang.Math.round;
+
+@Service
+public class RateServiceImpl implements RateService {
+
+    @Autowired
+    private ApplicantRepository repository;
+
+    Applicant applicant = new Applicant();
+
+
+    @Override
+    public RateResponse calculateAndSaveRate(RateRequest request) {
+
+        //   Calculate Base  Rate
+        double baseRate = calculateBaseRate(request.getCreditScore());
+
+        //  throw exception if credit score is not  valid
+        int score = request.getCreditScore();
+        if (score < 300 || score > 950) {
+            throw new InvalidCreditScoreException("Credit score is not valid. Must between 300  and 950");
+        }
+
+
+        //Adjustment Employer
+        double employerAdj = getEmployerAdjustment(request.getEmployerType());
+
+        // Referal
+        double referralAdj = getReferralAdjustment(request.isReferredBySomeone(), request.isReferringSomeone());
+
+        // Income
+        double incomeAdj = getIncomeAdjustment(request.getMonthlyIncome());
+
+        double finalRate = baseRate + employerAdj + referralAdj + incomeAdj;
+
+
+        if (finalRate < 10.0) {
+            finalRate = 10.0;
+        }
+
+        //  Processing  Fee
+        double processingFee = calculatedoubleProcessingFee(request.getLoanAmount());
+
+        // save to  db
+        applicant.setCreditScore(request.getCreditScore());
+        applicant.setEmployerType(request.getEmployerType());
+        applicant.setReferringSomeone(request.isReferringSomeone());
+        applicant.setReferredBySomeone(request.isReferredBySomeone());
+        applicant.setMonthlyIncome(request.getMonthlyIncome());
+        applicant.setLoanAmount(request.getLoanAmount());
+
+        applicant.setBaseRate(baseRate);
+        applicant.setEmployerAdjustment(employerAdj);
+        applicant.setReferralAdjustment(referralAdj);
+        applicant.setIncomeAdjustment(incomeAdj);
+        applicant.setFinalRate(finalRate);
+        applicant.setProcessingFee(processingFee);
+
+        repository.save(applicant);
+
+        //  create response
+        RateResponse response = new RateResponse();
+        response.setBaseRate(baseRate);
+        response.setEmployerAdjustment(employerAdj);
+        response.setReferralAdjustment(referralAdj);
+        response.setIncomeAdjustment(incomeAdj);
+        response.setFinalRate(finalRate);
+        response.setProcessingFee(processingFee);
+
+        return response;
+    }
+
+  */
+/*  public double calculateBaseRate(int score) {
 
         // Linear Interpolation Formula
-        if(score >= 750  &&  score <= 900)
-        {
-            return  10 + ((12-10)  *  (score - 750) / (900 - 750));
-        }
-        else if (score >= 650  &&  score < 750)
-        {
-            return  13 + ((16 - 13)  *  (score - 650)  / (749 - 650 ));
+        if (score >= 750 && score <= 900) {
+            return 10 + ((12 - 10) * (score - 750) / (900 - 750));
+        } else if (score >= 650 && score < 750) {
+            return 13 + ((16 - 13) * (score - 650) / (749 - 650));
 
-        }
-        else if (score < 650)     // (score >= 300   &&  score < 650)
+        } else if (score < 650)     // (score >= 300   &&  score < 650)
         {
-            return  17 + ((24 - 17)  *  (score - 300)  / (649 -  300 ));  //  India (CIBIL) or most systems credit scores  start at 300
+            return 17 + ((24 - 17) * (score - 300) / (649 - 300));  //  India (CIBIL) or most systems credit scores  start at 300
 
-        }
-        else
-        {
-            return  24;
+        } else {
+            return 24;
         }
     }
+*//*
 
-    public  double  getEmployerAdjustment(String employerType)
-    {
-        if ("GOVERNMENT".equalsIgnoreCase(employerType))
-        {
-            return  -0.5;
-        }
-        else if ("MNC".equalsIgnoreCase(employerType))
-        {
-            return  -0.25;
-        }
-        else
-        {
+   */
+/* public double getEmployerAdjustment(String employerType) {
+        if ("GOVERNMENT".equalsIgnoreCase(employerType)) {
+            return -0.5;
+        } else if ("MNC".equalsIgnoreCase(employerType)) {
+            return -0.25;
+        } else {
             return 0.0;
-
         }
-    }
+    }*//*
 
 
-    public  double getReferralAdjustment(boolean referred, boolean referring)
-    {
-        if (referred  &&  referring)
-        {
-            return  -0.5;
-        }
-        else if (referred  ||  referring) {
-
-            return   -0.25;
-        }
-        else
-        {
-            return  0.0;
+  */
+/*  public double getReferralAdjustment(boolean referred, boolean referring) {
+        if (referred && referring) {
+            return -0.5;
+        } else if (referred || referring) {
+            return -0.25;
+        } else {
+            return 0.0;
         }
 
-    }
+    }*//*
 
-    public double getIncomeAdjustment(double income)
-    {
-        if(income >  100000)
-        {
-            return  -0.5;
+
+ */
+/*   public double getIncomeAdjustment(double income) {
+        if (income > 100000) {
+            return -0.5;
+        } else if (income >= 50000) {
+
+            return -0.25;
+        } else {
+            return 0.0;
         }
-        else if (income  >=  50000) {
-
-            return   -0.25;
-        }
-        else
-        {
-            return   0.0;
-        }
-    }
+    }*//*
 
 
-    public  double calculatedoubleProcessingFee(double amount)
-    {
-        double  fee  =   amount  *  0.01;
+  */
+/*  public double calculatedoubleProcessingFee(double amount) {
+        double fee = amount * 0.01;
 
-        if(fee  <  1250)
-        {
+        if (fee < 1250) {
             return 1250;
+        } else if (fee > 5000) {
+            return 5000;
+        } else {
+            return fee;
         }
-        else if(fee  >  5000)
-        {
-            return  5000;
-        }
-        else
-        {
-            return  fee;
-        }
-    }
+    }*//*
+
 
     //   CALCULATE   EMI
     @Override
     public EMIResponse calculateAndSaveEMI(EMIRequest request) {
 
-        double  P  =   request.getLoanAmount();
-        double  R  =   request.getAnnualRate()  / 12 / 100;
-        int     N  =   request.getTenureAmount();
+        double P = request.getLoanAmount();
+        double R = request.getAnnualRate() / 12 / 100;
+        int N = request.getTenureAmount();
 
-        double emi =    (P * R  *  Math.pow( 1 +  R, N))  /  (Math.pow(1 + R , N) - 1);
+        double emi = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1);
 
-        double  totalRepayment  =  emi * N;
-        double  totalInterest   =   totalRepayment - P;
+        double totalRepayment = emi * N;
+        double totalInterest = totalRepayment - P;
 
         // Save the database
-       // Applicant applicant = new Applicant();
-
         applicant.setLoanAmount(P);
         applicant.setTenureMonths(N);
         applicant.setFinalRate(request.getAnnualRate());
@@ -214,20 +344,17 @@ public class RateServiceImpl implements RateService {
 
         repository.save(applicant);
 
-
         //  Prepare  Amortization Schedule
-        List<AmortizationEntryResponse>  schedule  =  new ArrayList<>();
-        double remainingPrincipal  =  P;
+        List<AmortizationEntryResponse> schedule = new ArrayList<>();
+        double remainingPrincipal = P;
 
-        for(int month = 1; month <= N ; month++)
-        {
-            double  interestForMonth = remainingPrincipal * R;
-            double  principalForMonth =  emi -  interestForMonth;
+        for (int month = 1; month <= N; month++) {
+            double interestForMonth = remainingPrincipal * R;
+            double principalForMonth = emi - interestForMonth;
 
-            remainingPrincipal  -=  principalForMonth;
+            remainingPrincipal -= principalForMonth;
 
-            if(month == N)
-            {
+            if (month == N) {
                 remainingPrincipal = 0;
             }
 
@@ -239,17 +366,14 @@ public class RateServiceImpl implements RateService {
 
             schedule.add(entry);
 
-
         }
 
-
         //  Prepare Response
-        EMIResponse  response  = new EMIResponse();
+        EMIResponse response = new EMIResponse();
         response.setEmi(emi);
         response.setPrincipal(round(P));
         response.setTotalInterest(round(totalInterest));
         response.setTotalRepayment(round(totalRepayment));
-
         response.setAmortizationSchedule(schedule);
         return response;
     }
@@ -257,50 +381,47 @@ public class RateServiceImpl implements RateService {
     @Override
     public ScenarioComparisonResponse compareScenarios(ScenarioRequest request) {
 
-       List<ScenarioResult>  results = new ArrayList<>();
+        List<ScenarioResult> results = new ArrayList<>();
 
-       for(EMIRequest scenario : request.getScenario())
-       {
-           double P = scenario.getLoanAmount();
-           double R = scenario.getAnnualRate() / 12/ 100;
-           int N    = scenario.getTenureAmount();
+        for (EMIRequest scenario : request.getScenario()) {
+            double P = scenario.getLoanAmount();
+            double R = scenario.getAnnualRate() / 12 / 100;
+            int N = scenario.getTenureAmount();
 
-           double emi =    (P * R  *  Math.pow( 1 +  R, N))  /  (Math.pow(1 + R , N) - 1);
-           double totalRepayment = emi * N;
-           double totalInterest  =  totalRepayment - P;
+            double emi = (P * R * Math.pow(1 + R, N)) / (Math.pow(1 + R, N) - 1);
+            double totalRepayment = emi * N;
+            double totalInterest = totalRepayment - P;
 
-           ScenarioResult  result = new ScenarioResult();
-           result.setEmi(emi);
-           result.setTotalInterest(totalInterest);
-           result.setTotalRepayment(totalRepayment);
-           result.setPrincipal(P);
-           result.setAnnualRate(scenario.getAnnualRate());
-           result.setTenureMonth(N);
+            ScenarioResult result = new ScenarioResult();
+            result.setEmi(emi);
+            result.setTotalInterest(totalInterest);
+            result.setTotalRepayment(totalRepayment);
+            result.setPrincipal(P);
+            result.setAnnualRate(scenario.getAnnualRate());
+            result.setTenureMonth(N);
 
-           results.add(result);
+            results.add(result);
 
-       }
+        }
 
-       ScenarioComparisonResponse  response = new ScenarioComparisonResponse();
-       response.setResult(results);
+        ScenarioComparisonResponse response = new ScenarioComparisonResponse();
+        response.setResult(results);
 
         return response;
     }
 
     @Override
     public List<Applicant> getAllApplicants() {
-
         return repository.findAll();
-
     }
 
     @Override
     public Applicant getApplicantById(Long id) {
-
-        Optional<Applicant>  optionalApplicant= repository.findById(id);
-        return  optionalApplicant.orElseThrow(() -> new ApplicantNotFoundException("Applicant not found with id : "+ id));
+        Optional<Applicant> optionalApplicant = repository.findById(id);
+        return optionalApplicant.orElseThrow(() -> new ApplicantNotFoundException("Applicant not found with id : " + id));
 
     }
 
 
 }
+*/
