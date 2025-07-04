@@ -1,8 +1,12 @@
 package com.personal_loan.personal_loan.dto;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
+//@Getter
+//@Setter
 public class RateResponse {
 
     private double baseRate;

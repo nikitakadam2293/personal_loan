@@ -2,6 +2,7 @@ package com.personal_loan.personal_loan.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.personal_loan.personal_loan.dto.*;
+import com.personal_loan.personal_loan.entity.Applicant;
 import com.personal_loan.personal_loan.repository.ApplicantRepository;
 import com.personal_loan.personal_loan.service.RateService;
 import com.personal_loan.personal_loan.service_impl.RateServiceImpl;
@@ -17,6 +18,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,7 +54,8 @@ public class RateControllerTest {
         response.setFinalRate(12.5);
         response.setProcessingFee(2000);
 
-        Mockito.when(rateService.calculateAndSaveRate(any())).thenReturn(response);
+//        Mockito.when(rateService.calculateAndSaveRate(any())).thenReturn(response);
+        Mockito.when(rateService.calculateAndSaveRate(request)).thenReturn(response);
 
         mockMvc.perform(post("/api/rate/calculate_rate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -117,7 +122,52 @@ public class RateControllerTest {
                 .andExpect(jsonPath("$.result[0].annualRate").value(10))
                 .andExpect(jsonPath("$.result[0].tenureMonth").value(12));
 
+    }
 
+    @Test
+    void testgetAllApplicants() throws  Exception {
+        Applicant applicant1 = new Applicant();
+        applicant1.setId(1L);
+        applicant1.setCreditScore(750);
+        applicant1.setEmployerType("MNC");
+
+        Applicant applicant2 = new Applicant();
+        applicant2.setId(2L);
+        applicant2.setCreditScore(650);
+        applicant2.setEmployerType("GOVERNMENT");
+
+        Mockito.when(rateService.getAllApplicants()).thenReturn(List.of(applicant1, applicant2));
+
+        mockMvc.perform(get("/api/rate/getall"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].creditScore").value(750))
+                .andExpect(jsonPath("$[0].employerType").value("MNC"))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].creditScore").value(650))
+                .andExpect(jsonPath("$[1].employerType").value("GOVERNMENT"));
+
+    }
+
+    @Test
+    void testgetApplicantById() throws Exception {
+        Applicant applicant = new Applicant();
+        applicant.setId(1L);
+        applicant.setCreditScore(800);
+        applicant.setEmployerType("private");
+        applicant.setMonthlyIncome(50000);
+
+        Mockito.when(rateService.getApplicantById(1L)).thenReturn(applicant);
+
+        mockMvc.perform(get("/api/rate/1"))
+                .andExpect(status().isOk())
+
+
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.creditScore").value(800))
+                .andExpect(jsonPath("$.employerType").value("private"))
+                .andExpect(jsonPath("$.monthlyIncome").value(50000.0));
 
     }
 }

@@ -2,6 +2,7 @@ package com.personal_loan.personal_loan.service_impl;
 
 import com.personal_loan.personal_loan.dto.*;
 import com.personal_loan.personal_loan.entity.Applicant;
+import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
 import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
 import com.personal_loan.personal_loan.repository.ApplicantRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,13 +11,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 
 public class RateServiceImplTest {
@@ -289,6 +290,54 @@ public class RateServiceImplTest {
         assertThat(r1.getEmi()).isGreaterThan(0);
         assertThat(r2.getEmi()).isGreaterThan(0);
 
+    }
+
+    // GET ALL APPLICANT
+    @Test
+    void getAllApplicants_shouldReturnListOfApplicants() {
+
+        Applicant applicant1 = new Applicant();
+        applicant1.setId(1L);
+        applicant1.setCreditScore(750);
+
+        Applicant applicant2 = new Applicant();
+        applicant2.setId(2L);
+        applicant2.setCreditScore(800);
+
+        when(repository.findAll()).thenReturn(Arrays.asList(applicant1,applicant2));
+
+        List<Applicant> result = rateService.getAllApplicants();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(1).getCreditScore()).isEqualTo(800);
+
+    }
+
+    @Test
+    void getApplicantById_shouldReturnApplicant_whenFound() {
+
+        Applicant applicant = new Applicant();
+        applicant.setId(1L);
+        applicant.setCreditScore(750);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(applicant));
+
+        Applicant result = rateService.getApplicantById(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getCreditScore()).isEqualTo(750);
+    }
+
+    @Test
+    void getApplicantById_shouldThrowException_whenNotFound() {
+
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(()-> rateService.getApplicantById(99L))
+                .isInstanceOf(ApplicantNotFoundException.class)
+                .hasMessageContaining("Applicant not found with id : 99");
 
     }
 

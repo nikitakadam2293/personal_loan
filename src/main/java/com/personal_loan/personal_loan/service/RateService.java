@@ -6,6 +6,9 @@ import com.personal_loan.personal_loan.dto.RateRequest;
 import com.personal_loan.personal_loan.dto.RateResponse;
 import com.personal_loan.personal_loan.dto.ScenarioComparisonResponse;
 import com.personal_loan.personal_loan.dto.ScenarioRequest;
+import com.personal_loan.personal_loan.entity.Applicant;
+
+import java.util.List;
 
 public interface RateService {
 
@@ -16,5 +19,9 @@ public interface RateService {
 
     ScenarioComparisonResponse compareScenarios(ScenarioRequest request);
 
+
+    List<Applicant> getAllApplicants();
+
+    Applicant getApplicantById(Long id);
 
 }

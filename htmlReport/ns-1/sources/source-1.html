@@ -5,7 +5,7 @@
 <html id="htmlId">
 <head>
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"> 
-  <title>Coverage Report > PersonalLoanApplication</title>
+  <title>Coverage Report > RateServiceImpl</title>
   <style type="text/css">
     @import "../../css/coverage.css";
     @import "../../css/idea.min.css";
@@ -19,10 +19,10 @@
 <div class="breadCrumbs">
 Current scope:     <a href="../../index.html">all classes</a>
     <span class="separator">|</span>
-    <a href="../index.html">com.personal_loan.personal_loan</a>
+    <a href="../index.html">com.personal_loan.personal_loan.service_impl</a>
 </div>
 
-<h1>Coverage Summary for Class: PersonalLoanApplication (com.personal_loan.personal_loan)</h1>
+<h1>Coverage Summary for Class: RateServiceImpl (com.personal_loan.personal_loan.service_impl)</h1>
 
 <table class="coverageStats">
 <tr>
@@ -37,11 +37,15 @@ Current scope:     <a href="../../index.html">all classes</a>
 </th>
 <th class="coverageStat 
 ">
+  Branch, %
+</th>
+<th class="coverageStat 
+">
   Line, %
 </th>
 </tr>
 <tr>
-  <td class="name">PersonalLoanApplication</td>
+  <td class="name">RateServiceImpl</td>
 <td class="coverageStat">
   <span class="percent">
     100%
@@ -55,7 +59,7 @@ Current scope:     <a href="../../index.html">all classes</a>
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (11/11)
   </span>
 </td>
 <td class="coverageStat">
@@ -63,7 +67,15 @@ Current scope:     <a href="../../index.html">all classes</a>
     100%
   </span>
   <span class="absValue">
-    (2/2)
+    (42/42)
+  </span>
+</td>
+<td class="coverageStat">
+  <span class="percent">
+    100%
+  </span>
+  <span class="absValue">
+    (118/118)
   </span>
 </td>
 </tr>
@@ -75,17 +87,310 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 
 <pre>
-<code class="sourceCode" id="sourceCode">&nbsp;package com.personal_loan.personal_loan;
+<code class="sourceCode" id="sourceCode">&nbsp;package com.personal_loan.personal_loan.service_impl;
 &nbsp;
-&nbsp;import org.springframework.boot.SpringApplication;
-&nbsp;import org.springframework.boot.autoconfigure.SpringBootApplication;
+&nbsp;import com.personal_loan.personal_loan.dto.*;
+&nbsp;import com.personal_loan.personal_loan.entity.Applicant;
+&nbsp;import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
+&nbsp;import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
+&nbsp;import com.personal_loan.personal_loan.repository.ApplicantRepository;
+&nbsp;import com.personal_loan.personal_loan.service.RateService;
+&nbsp;import org.springframework.beans.factory.annotation.Autowired;
+&nbsp;import org.springframework.stereotype.Service;
 &nbsp;
-&nbsp;@SpringBootApplication
-<b class="fc">&nbsp;public class PersonalLoanApplication {</b>
+&nbsp;import java.util.ArrayList;
+&nbsp;import java.util.List;
+&nbsp;import java.util.Optional;
 &nbsp;
-&nbsp;	public static void main(String[] args) {
-<b class="fc">&nbsp;		SpringApplication.run(PersonalLoanApplication.class, args);</b>
-&nbsp;	}
+&nbsp;import static java.lang.Math.round;
+&nbsp;
+&nbsp;@Service
+<b class="fc">&nbsp;public class RateServiceImpl implements RateService {</b>
+&nbsp;
+&nbsp;    @Autowired
+&nbsp;    private ApplicantRepository repository;
+&nbsp;
+<b class="fc">&nbsp;    Applicant  applicant  =  new Applicant();</b>
+&nbsp;
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public RateResponse calculateAndSaveRate(RateRequest request) {
+&nbsp;
+&nbsp;        //   Calculate Base  Rate
+<b class="fc">&nbsp;        double baseRate =  calculateBaseRate(request.getCreditScore());</b>
+&nbsp;
+&nbsp;        //  throw exception if credit score is not  valid
+<b class="fc">&nbsp;        int score  =  request.getCreditScore();</b>
+<b class="fc">&nbsp;        if(score &lt; 300  ||  score&gt;950)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            throw  new InvalidCreditScoreException(&quot;Credit score is not valid. Must between 300  and 950&quot;);</b>
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;        // Adjustment
+&nbsp;        // Employer
+<b class="fc">&nbsp;        double  employerAdj = getEmployerAdjustment(request.getEmployerType());</b>
+&nbsp;
+&nbsp;        // Referal
+<b class="fc">&nbsp;        double referralAdj  = getReferralAdjustment( request.isReferredBySomeone(),request.isReferringSomeone() );</b>
+&nbsp;
+&nbsp;        // Income
+<b class="fc">&nbsp;        double  incomeAdj   = getIncomeAdjustment(request.getMonthlyIncome());</b>
+&nbsp;
+<b class="fc">&nbsp;        double  finalRate  =    baseRate +  employerAdj  +  referralAdj  +  incomeAdj;</b>
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;        if(finalRate  &lt;  10.0)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            finalRate  =  10.0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;        //  Processing  Fee
+<b class="fc">&nbsp;        double  processingFee =  calculatedoubleProcessingFee(request.getLoanAmount());</b>
+&nbsp;
+&nbsp;
+&nbsp;        // save to  db
+&nbsp;//        Applicant  applicant  =  new Applicant();
+&nbsp;
+<b class="fc">&nbsp;        applicant.setCreditScore(request.getCreditScore());</b>
+<b class="fc">&nbsp;        applicant.setEmployerType(request.getEmployerType());</b>
+<b class="fc">&nbsp;        applicant.setReferringSomeone(request.isReferringSomeone());</b>
+<b class="fc">&nbsp;        applicant.setReferredBySomeone(request.isReferredBySomeone());</b>
+<b class="fc">&nbsp;        applicant.setMonthlyIncome(request.getMonthlyIncome());</b>
+<b class="fc">&nbsp;        applicant.setLoanAmount(request.getLoanAmount());</b>
+&nbsp;
+&nbsp;
+<b class="fc">&nbsp;        applicant.setBaseRate(baseRate);</b>
+<b class="fc">&nbsp;        applicant.setEmployerAdjustment(employerAdj);</b>
+<b class="fc">&nbsp;        applicant.setReferralAdjustment(referralAdj);</b>
+<b class="fc">&nbsp;        applicant.setIncomeAdjustment(incomeAdj);</b>
+<b class="fc">&nbsp;        applicant.setFinalRate(finalRate);</b>
+<b class="fc">&nbsp;        applicant.setProcessingFee(processingFee);</b>
+&nbsp;
+<b class="fc">&nbsp;        repository.save(applicant);</b>
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;        //  create response
+<b class="fc">&nbsp;        RateResponse  response  =  new RateResponse();</b>
+<b class="fc">&nbsp;        response.setBaseRate(baseRate);</b>
+<b class="fc">&nbsp;        response.setEmployerAdjustment(employerAdj);</b>
+<b class="fc">&nbsp;        response.setReferralAdjustment(referralAdj);</b>
+<b class="fc">&nbsp;        response.setIncomeAdjustment(incomeAdj);</b>
+<b class="fc">&nbsp;        response.setFinalRate(finalRate);</b>
+<b class="fc">&nbsp;        response.setProcessingFee(processingFee);</b>
+&nbsp;
+<b class="fc">&nbsp;        return response;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public double  calculateBaseRate(int score)
+&nbsp;    {
+&nbsp;
+&nbsp;        // Linear Interpolation Formula
+<b class="fc">&nbsp;        if(score &gt;= 750  &amp;&amp;  score &lt;= 900)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  10 + ((12-10)  *  (score - 750) / (900 - 750));</b>
+&nbsp;        }
+<b class="fc">&nbsp;        else if (score &gt;= 650  &amp;&amp;  score &lt; 750)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  13 + ((16 - 13)  *  (score - 650)  / (749 - 650 ));</b>
+&nbsp;
+&nbsp;        }
+<b class="fc">&nbsp;        else if (score &lt; 650)     // (score &gt;= 300   &amp;&amp;  score &lt; 650)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  17 + ((24 - 17)  *  (score - 300)  / (649 -  300 ));  //  India (CIBIL) or most systems credit scores  start at 300</b>
+&nbsp;
+&nbsp;        }
+&nbsp;        else
+&nbsp;        {
+<b class="fc">&nbsp;            return  24;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    public  double  getEmployerAdjustment(String employerType)
+&nbsp;    {
+<b class="fc">&nbsp;        if (&quot;GOVERNMENT&quot;.equalsIgnoreCase(employerType))</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  -0.5;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        else if (&quot;MNC&quot;.equalsIgnoreCase(employerType))</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  -0.25;</b>
+&nbsp;        }
+&nbsp;        else
+&nbsp;        {
+<b class="fc">&nbsp;            return 0.0;</b>
+&nbsp;
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public  double getReferralAdjustment(boolean referred, boolean referring)
+&nbsp;    {
+<b class="fc">&nbsp;        if (referred  &amp;&amp;  referring)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  -0.5;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        else if (referred  ||  referring) {</b>
+&nbsp;
+<b class="fc">&nbsp;            return   -0.25;</b>
+&nbsp;        }
+&nbsp;        else
+&nbsp;        {
+<b class="fc">&nbsp;            return  0.0;</b>
+&nbsp;        }
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    public double getIncomeAdjustment(double income)
+&nbsp;    {
+<b class="fc">&nbsp;        if(income &gt;  100000)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  -0.5;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        else if (income  &gt;=  50000) {</b>
+&nbsp;
+<b class="fc">&nbsp;            return   -0.25;</b>
+&nbsp;        }
+&nbsp;        else
+&nbsp;        {
+<b class="fc">&nbsp;            return   0.0;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;
+&nbsp;    public  double calculatedoubleProcessingFee(double amount)
+&nbsp;    {
+<b class="fc">&nbsp;        double  fee  =   amount  *  0.01;</b>
+&nbsp;
+<b class="fc">&nbsp;        if(fee  &lt;  1250)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return 1250;</b>
+&nbsp;        }
+<b class="fc">&nbsp;        else if(fee  &gt;  5000)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            return  5000;</b>
+&nbsp;        }
+&nbsp;        else
+&nbsp;        {
+<b class="fc">&nbsp;            return  fee;</b>
+&nbsp;        }
+&nbsp;    }
+&nbsp;
+&nbsp;    //   CALCULATE   EMI
+&nbsp;    @Override
+&nbsp;    public EMIResponse calculateAndSaveEMI(EMIRequest request) {
+&nbsp;
+<b class="fc">&nbsp;        double  P  =   request.getLoanAmount();</b>
+<b class="fc">&nbsp;        double  R  =   request.getAnnualRate()  / 12 / 100;</b>
+<b class="fc">&nbsp;        int     N  =   request.getTenureAmount();</b>
+&nbsp;
+<b class="fc">&nbsp;        double emi =    (P * R  *  Math.pow( 1 +  R, N))  /  (Math.pow(1 + R , N) - 1);</b>
+&nbsp;
+<b class="fc">&nbsp;        double  totalRepayment  =  emi * N;</b>
+<b class="fc">&nbsp;        double  totalInterest   =   totalRepayment - P;</b>
+&nbsp;
+&nbsp;        // Save the database
+&nbsp;       // Applicant applicant = new Applicant();
+&nbsp;
+<b class="fc">&nbsp;        applicant.setLoanAmount(P);</b>
+<b class="fc">&nbsp;        applicant.setTenureMonths(N);</b>
+<b class="fc">&nbsp;        applicant.setFinalRate(request.getAnnualRate());</b>
+<b class="fc">&nbsp;        applicant.setEmi(emi);</b>
+<b class="fc">&nbsp;        applicant.setTotalRepayment(totalRepayment);</b>
+<b class="fc">&nbsp;        applicant.setTotalInterest(totalInterest);</b>
+&nbsp;
+<b class="fc">&nbsp;        repository.save(applicant);</b>
+&nbsp;
+&nbsp;
+&nbsp;        //  Prepare  Amortization Schedule
+<b class="fc">&nbsp;        List&lt;AmortizationEntryResponse&gt;  schedule  =  new ArrayList&lt;&gt;();</b>
+<b class="fc">&nbsp;        double remainingPrincipal  =  P;</b>
+&nbsp;
+<b class="fc">&nbsp;        for(int month = 1; month &lt;= N ; month++)</b>
+&nbsp;        {
+<b class="fc">&nbsp;            double  interestForMonth = remainingPrincipal * R;</b>
+<b class="fc">&nbsp;            double  principalForMonth =  emi -  interestForMonth;</b>
+&nbsp;
+<b class="fc">&nbsp;            remainingPrincipal  -=  principalForMonth;</b>
+&nbsp;
+<b class="fc">&nbsp;            if(month == N)</b>
+&nbsp;            {
+<b class="fc">&nbsp;                remainingPrincipal = 0;</b>
+&nbsp;            }
+&nbsp;
+<b class="fc">&nbsp;            AmortizationEntryResponse entry = new AmortizationEntryResponse();</b>
+<b class="fc">&nbsp;            entry.setMonth(month);</b>
+<b class="fc">&nbsp;            entry.setPrincipalPaid(round(principalForMonth));</b>
+<b class="fc">&nbsp;            entry.setInterestPaid(round(interestForMonth));</b>
+<b class="fc">&nbsp;            entry.setRemainingBalance(round(remainingPrincipal));</b>
+&nbsp;
+<b class="fc">&nbsp;            schedule.add(entry);</b>
+&nbsp;
+&nbsp;
+&nbsp;        }
+&nbsp;
+&nbsp;
+&nbsp;        //  Prepare Response
+<b class="fc">&nbsp;        EMIResponse  response  = new EMIResponse();</b>
+<b class="fc">&nbsp;        response.setEmi(emi);</b>
+<b class="fc">&nbsp;        response.setPrincipal(round(P));</b>
+<b class="fc">&nbsp;        response.setTotalInterest(round(totalInterest));</b>
+<b class="fc">&nbsp;        response.setTotalRepayment(round(totalRepayment));</b>
+&nbsp;
+<b class="fc">&nbsp;        response.setAmortizationSchedule(schedule);</b>
+<b class="fc">&nbsp;        return response;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public ScenarioComparisonResponse compareScenarios(ScenarioRequest request) {
+&nbsp;
+<b class="fc">&nbsp;       List&lt;ScenarioResult&gt;  results = new ArrayList&lt;&gt;();</b>
+&nbsp;
+<b class="fc">&nbsp;       for(EMIRequest scenario : request.getScenario())</b>
+&nbsp;       {
+<b class="fc">&nbsp;           double P = scenario.getLoanAmount();</b>
+<b class="fc">&nbsp;           double R = scenario.getAnnualRate() / 12/ 100;</b>
+<b class="fc">&nbsp;           int N    = scenario.getTenureAmount();</b>
+&nbsp;
+<b class="fc">&nbsp;           double emi =    (P * R  *  Math.pow( 1 +  R, N))  /  (Math.pow(1 + R , N) - 1);</b>
+<b class="fc">&nbsp;           double totalRepayment = emi * N;</b>
+<b class="fc">&nbsp;           double totalInterest  =  totalRepayment - P;</b>
+&nbsp;
+<b class="fc">&nbsp;           ScenarioResult  result = new ScenarioResult();</b>
+<b class="fc">&nbsp;           result.setEmi(emi);</b>
+<b class="fc">&nbsp;           result.setTotalInterest(totalInterest);</b>
+<b class="fc">&nbsp;           result.setTotalRepayment(totalRepayment);</b>
+<b class="fc">&nbsp;           result.setPrincipal(P);</b>
+<b class="fc">&nbsp;           result.setAnnualRate(scenario.getAnnualRate());</b>
+<b class="fc">&nbsp;           result.setTenureMonth(N);</b>
+&nbsp;
+<b class="fc">&nbsp;           results.add(result);</b>
+&nbsp;
+&nbsp;       }
+&nbsp;
+<b class="fc">&nbsp;       ScenarioComparisonResponse  response = new ScenarioComparisonResponse();</b>
+<b class="fc">&nbsp;       response.setResult(results);</b>
+&nbsp;
+<b class="fc">&nbsp;        return response;</b>
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public List&lt;Applicant&gt; getAllApplicants() {
+&nbsp;
+<b class="fc">&nbsp;        return repository.findAll();</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
+&nbsp;    @Override
+&nbsp;    public Applicant getApplicantById(Long id) {
+&nbsp;
+<b class="fc">&nbsp;        Optional&lt;Applicant&gt;  optionalApplicant= repository.findById(id);</b>
+<b class="fc">&nbsp;        return  optionalApplicant.orElseThrow(() -&gt; new ApplicantNotFoundException(&quot;Applicant not found with id : &quot;+ id));</b>
+&nbsp;
+&nbsp;    }
+&nbsp;
 &nbsp;
 &nbsp;}
 </code>
@@ -111,7 +416,7 @@ Current scope:     <a href="../../index.html">all classes</a>
 
 <div class="footer">
     
-    <div style="float:right;">generated on 2025-07-03 18:21</div>
+    <div style="float:right;">generated on 2025-07-04 10:53</div>
 </div>
 </body>
 </html>

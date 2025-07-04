@@ -2,6 +2,7 @@ package com.personal_loan.personal_loan.service_impl;
 
 import com.personal_loan.personal_loan.dto.*;
 import com.personal_loan.personal_loan.entity.Applicant;
+import com.personal_loan.personal_loan.exception.ApplicantNotFoundException;
 import com.personal_loan.personal_loan.exception.InvalidCreditScoreException;
 import com.personal_loan.personal_loan.repository.ApplicantRepository;
 import com.personal_loan.personal_loan.service.RateService;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.Math.round;
 
@@ -283,6 +285,21 @@ public class RateServiceImpl implements RateService {
        response.setResult(results);
 
         return response;
+    }
+
+    @Override
+    public List<Applicant> getAllApplicants() {
+
+        return repository.findAll();
+
+    }
+
+    @Override
+    public Applicant getApplicantById(Long id) {
+
+        Optional<Applicant>  optionalApplicant= repository.findById(id);
+        return  optionalApplicant.orElseThrow(() -> new ApplicantNotFoundException("Applicant not found with id : "+ id));
+
     }
 
 
