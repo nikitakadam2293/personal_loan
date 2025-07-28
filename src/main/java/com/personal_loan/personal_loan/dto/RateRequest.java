@@ -1,5 +1,4 @@
 package com.personal_loan.personal_loan.dto;
-
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

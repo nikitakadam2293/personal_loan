@@ -1,6 +1,4 @@
-
 package com.personal_loan.personal_loan.service_impl;
-
 import com.personal_loan.personal_loan.dto.RateRequest;
 import com.personal_loan.personal_loan.dto.RateResponse;
 import com.personal_loan.personal_loan.dto.EMIResponse;
@@ -34,7 +32,7 @@ public class RateServiceImpl implements RateService {
     @Override
     public RateResponse calculateAndSaveRate(RateRequest request) {
 
-//  throw exception if credit score is not  valid
+       //throw exception if credit score is not  valid
         int score = request.getCreditScore();
         if (score < 300 || score > 950) {
             throw new InvalidCreditScoreException("Credit score is not valid. Must between 300  and 950");
@@ -46,12 +44,10 @@ public class RateServiceImpl implements RateService {
         double incomeAdj = RateCalculatorUtil.getIncomeAdjustment(request.getMonthlyIncome());
 
         double finalRate = baseRate + employerAdj + referralAdj + incomeAdj;
-
         if (finalRate < 10.0) {
             finalRate = 10.0;
         }
 
-//  Processing  Fee
         double processingFee = calculatedoubleProcessingFee(request.getLoanAmount());
 
         // save to  db
@@ -83,7 +79,7 @@ public class RateServiceImpl implements RateService {
         return response;
     }
 
-    //   CALCULATE   EMI
+    //CALCULATE   EMI
     @Override
     public EMIResponse calculateAndSaveEMI(EMIRequest request) {
 

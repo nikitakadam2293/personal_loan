@@ -1,5 +1,4 @@
 package com.personal_loan.personal_loan.entity;
-
 import lombok.Data;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

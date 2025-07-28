@@ -12,6 +12,4 @@ public class EMIResponse {
 
     // for Amortization
     private List<AmortizationEntryResponse> amortizationSchedule;
-
-
 }

@@ -1,5 +1,4 @@
 package com.personal_loan.personal_loan.controller;
-
 import com.personal_loan.personal_loan.dto.EMIRequest;
 import com.personal_loan.personal_loan.dto.EMIResponse;
 import com.personal_loan.personal_loan.dto.RateRequest;
@@ -51,15 +50,47 @@ public class RateController {
     public Applicant getApplicantById(@PathVariable Long id) {
         return rateService.getApplicantById(id);
     }
-
 }
 
 
-/*
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 after replace this:
 req.getCreditScore()
-
 with:
 creditScoreService.getCreditScore(applicantId)
 * */

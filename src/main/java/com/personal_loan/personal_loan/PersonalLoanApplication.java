@@ -1,5 +1,4 @@
 package com.personal_loan.personal_loan;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

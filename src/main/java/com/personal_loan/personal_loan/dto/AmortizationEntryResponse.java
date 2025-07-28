@@ -10,6 +10,4 @@ public class AmortizationEntryResponse {
     private double principalPaid;
     private double interestPaid;
     private double remainingBalance;
-
-
 }
